@@ -1,0 +1,82 @@
+=enum_id
+
+Defines an enumerated field (stored as an integral id).
+The field is defined by its name (which must be the column name without the _id suffix),
+and a hash which maps the id valid values of the field to symbolic constants.
+The hash can also contain options with symbolic keys; currently the only valid option is
+:required which checks for non-nil values at validation; if a value other than true is
+assigned to it, it should be a hash with options that will be relayed to validates_presence_of
+
+Example: (we assume that the table for X has an integer column named 'status_id')
+
+  class X < ActiveRecord::Base
+    enum_id :status, 1=>:first, 2=>:second, 3=>:third, :required=>true
+  end
+
+This is equivalent to:
+
+  class X < ActiveRecord::Base
+    # Return the symbolic status value
+    def status
+      X.status(status_id)
+    end
+    # Assigns the symbolic status value and also accepts status ids
+    def status=(st)
+      self.status_id = X.status_id(st)
+    end
+    # Returns the status description (must be provided as a translation)
+    def status_name
+      X.status_name(status_id)
+    end
+    ENUM_ID_status_SYMBOLS = {1=>:first, 2=>:second, 3=>:third}
+    ENUM_ID_status_IDS = {:first=>1, :second=>2, :third=>3}
+    # Return the symbolic status for a status id
+    def X.status(id)
+      id && (ENUM_ID_status_SYMBOLS[id.to_i] || raise("Invalid status id: #{id}"))
+    end
+    # Return the status id for a symbolic status (or status id)
+    def X.status_id(st)
+      st && if st.kind_of?(Integer)
+        raise "Invalid status id: #{st}" unless X.status_ids.include?(st)
+        st
+      elsif st.kind_of?(Symbol)
+        ENUM_ID_status_IDS[st.to_sym] || raise("Invalid status: #{st.inspect}")
+      else
+        raise TypeError,"Integer or Symbol argument expected (got a #{st.class.name})."
+      end
+    end
+    # Return the symbolic status given a status symbol or id
+    def X.status_symbol(st)
+      st && (st.kind_of?(Integer) ? status(st) : st.to_sym)
+    end
+    # Return the description of a status symbol or id
+    def X.status_name(st)
+      st = status_symbol(st)
+      st && I18n.t("enum_id.x.status.#{st}")
+    end
+    # Return all the valid status ids in an Array [1,2,3]
+    def X.status_ids
+      ENUM_ID_status_SYMBOLS.keys.sort
+    end
+    # Return all the valid status symbols in an Array: [:first, :second, :third]
+    def X.status_symbols
+      status_ids.map{|id| status_symbol(id)}
+    end
+    # Define accessors for all status values: first?, second?, third?
+    X.status_symbols.each do |stat|
+      define_method :"#{stat}?" do
+        status == :"#{stat}"
+      end
+    end
+    # Define validations
+    validates_inclusion_of :status_id, :in=>X.status_ids
+  end
+
+To use the _name methods we'd need to add this to config/locales/en.yml (and any other required languages):
+
+     enum_id:
+         x:
+           status:
+             first: "Description of first status"
+             second: "Description of second status"
+             third: "Description of third status"
