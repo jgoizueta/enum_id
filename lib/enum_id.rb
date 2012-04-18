@@ -97,3 +97,8 @@ module EnumId
   end
 
 end
+
+if defined? ActiveRecord::Base
+  ActiveRecord::Base.extend EnumId
+end
+
