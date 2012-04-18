@@ -4,9 +4,9 @@
 # The hash can also contain options with symbolic keys; currently the only valid option is
 # :required which checks for non-nil values at validation; if a value other than true is
 # assigned to it, it should be a hash with options that will be relayed to validates_presence_of
-class ActiveRecord::Base
+module EnumId
 
-  def self.enum_id(name, options_and_enum_values)
+  def enum_id(name, options_and_enum_values)
     options_and_enum_values = options_and_enum_values.group_by{|k,v| k.kind_of?(Integer) ? :values : :options}
     options = (options_and_enum_values[:options]||[]).to_h
     symbols_map = (options_and_enum_values[:values]||[]).to_h
