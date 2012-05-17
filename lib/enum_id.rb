@@ -1,3 +1,5 @@
+require 'modalsupport'
+
 # Defines an enumerated field (stored as an integral id).
 # The field is defined by its name (which must be the column name without the _id suffix),
 # and a hash which maps the id valid values of the field to symbolic constants.
